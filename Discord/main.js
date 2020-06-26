@@ -1,6 +1,7 @@
 const fs = require('fs');
 const Discord = require('discord.js');
 const { prefix, token } = require('./config.json');
+const { PassThrough } = require('stream');
 
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
@@ -11,6 +12,8 @@ for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
 	client.commands.set(command.name, command);
 }
+
+const registry = fs.readdirSync('./user files');
 
 client.once('ready', () => {
 	console.log('SquidNET is online!');
@@ -24,12 +27,11 @@ client.on('message', message => {
 
 	if (!client.commands.has(command)) return;
 
-     //TODO add Twitter account intergration.
 	try {
 		client.commands.get(command).execute(message, args);
 	} catch (error) {
 		console.error(error);
-		message.reply('there was an error trying to execute that command!');
+		message.channel.send(`${error}, ${message.author}!`);
 	}
 });
 

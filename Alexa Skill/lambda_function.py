@@ -11,21 +11,20 @@ import logging
 import random
 import requests
 
-from ask_sdk_core.utils import is_intent_name, is_request_type
+from weapon_info import weapon_info_dict
 
+from ask_sdk_core.utils import is_intent_name, is_request_type
 import ask_sdk_core.utils as ask_utils
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.utils import is_intent_name, get_slot_value, get_slot
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.dispatch_components import AbstractExceptionHandler
 from ask_sdk_core.handler_input import HandlerInput
-
 from ask_sdk_model import Response
-
-from weapon_info import weapon_info_dict
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 def time_remaining():
     cur_hour = int(dt.datetime.utcnow().strftime('%H'))
@@ -44,12 +43,13 @@ def time_remaining():
     if end_hour - cur_hour is 2:
         if end_minute - cur_minute is 0:
             return "1 hour"
-        return "1 hour and " + str(end_minute - cur_minute) + " minutes"
+        return "1 hour and {} minutes".format(str(end_minute - cur_minute))
     elif end_hour - cur_hour is 1 and end_minute - cur_minute is not 0:
-        return str(end_minute - cur_minute) + " minutes"
+        return "{} minutes".format(str(end_minute - cur_minute))
     else:
         return "- hold on, this data has just changed, please ask me again"
     
+
 def getGeneralInfoIntent(general):
     url = 'https://splatoon2.ink/data/schedules.json'
     response = requests.get(url).json()
@@ -58,24 +58,33 @@ def getGeneralInfoIntent(general):
     indicies = ['regular', 'gachi', 'league']
     
     for headers in indicies:
-        current_maps.append("{} and {}".format(response[headers][0]['stage_a']['name'], response[headers][0]['stage_b']['name']))
+        current_maps.append("{} and {}".format(response[headers][0]['stage_a']['name'], 
+                                               response[headers][0]['stage_b']['name']))
     
     ranked_mode = response['gachi'][0]['rule']['name']
     league_mode = response['league'][0]['rule']['name']
     
     if general is False:
         current_maps[0] += ", which ends in {}".format(time_remaining())
-        current_maps[1] = "{} at {}, which ends in {}".format(ranked_mode, current_maps[1], time_remaining())
-        current_maps[2] = "{} at {}, which ends in {}".format(league_mode, current_maps[2], time_remaining())
+
+        current_maps[1] = "{} at {}, which ends in {}".format(ranked_mode, 
+                                                              current_maps[1], 
+                                                              time_remaining())
+                                                              
+        current_maps[2] = "{} at {}, which ends in {}".format(league_mode, 
+                                                              current_maps[2], 
+                                                              time_remaining())
+
     else:
         current_maps[1] = "{} at {}".format(ranked_mode, current_maps[1])
-        current_maps[2] = "{} at {}, all of which ends in {}".format(league_mode, current_maps[2], time_remaining())
+        current_maps[2] = "{} at {}, all of which ends in {}".format(league_mode, 
+                                                                     current_maps[2], 
+                                                                     time_remaining())
     
     return current_maps
 
 
-
-def getFutureInfoIntent():
+def getFutureInfoIntent(general):
     url = 'https://splatoon2.ink/data/schedules.json'
     response = requests.get(url).json()
     
@@ -83,16 +92,30 @@ def getFutureInfoIntent():
     indicies = ['regular', 'gachi', 'league']
     
     for headers in indicies:
-        future_maps.append(response[headers][1]['stage_a']['name'] + " and " + response[headers][1]['stage_b']['name'])
+        future_maps.append("{} and {}".format(response[headers][1]['stage_a']['name'], 
+                                              response[headers][1]['stage_b']['name']))
     
     ranked_mode = response['gachi'][1]['rule']['name']
     league_mode = response['league'][1]['rule']['name']
 
-    future_maps[0] += ', which starts in ' + time_remaining()
-    future_maps[1] = ranked_mode + " at " + future_maps[1] + ", which starts in " + time_remaining()
-    future_maps[2] = league_mode + " at " + future_maps[2] + ", which starts in " + time_remaining()
+    if general is False:
+        future_maps[0] += ", which starts in {}".format(time_remaining())
+
+        future_maps[1] = "{} at {}, which starts in {}".format(ranked_mode, 
+                                                            future_maps[1], 
+                                                            time_remaining())
+
+        future_maps[2] = "{} at {}, which starts in {}".format(league_mode, 
+                                                            future_maps[2], 
+                                                            time_remaining())
+    else:
+        future_maps[1] = "{} at {}".format(ranked_mode, future_maps[1])
+        future_maps[2] = "{} at {}, all of which starts in {}".format(league_mode, 
+                                                                     future_maps[2], 
+                                                                     time_remaining()) 
     
     return future_maps
+
 
 def getStageAppearance(stage):
     url = 'https://splatoon2.ink/data/schedules.json'
@@ -245,6 +268,23 @@ class LeagueBattleIntentHandler(AbstractRequestHandler):
                 .speak(speak_output)
                 .response
         )
+# ADDED
+class FutureInfoIntentHandler(AbstractRequestHandler):
+    """Handler for FutureInfoIntent"""
+    def can_handle(self, handler_input):
+        # type: (HandlerInput) -> bool
+        return ask_utils.is_intent_name("FutureInfoIntent")(handler_input)
+    def handle(self, handler_input):
+        current_maps = getFutureInfoIntent(general=True)
+        speak_output = "The next stages are:"
+        speak_output += " for Turf War, " + current_maps[0] + ","
+        speak_output += " for Ranked Battles, " + current_maps[1] + ","
+        speak_output += " and for League Battles, " + current_maps[2] + "."
+        return (
+            handler_input.response_builder
+                .speak(speak_output)
+                .response
+        )
 
 class FutureTWIntentHandler(AbstractRequestHandler):
     """Handler for FutureTWIntent"""
@@ -252,7 +292,7 @@ class FutureTWIntentHandler(AbstractRequestHandler):
         # type: (HandlerInput) -> bool
         return ask_utils.is_intent_name("FutureTWIntent")(handler_input)
     def handle(self, handler_input):
-        future_maps = getFutureInfoIntent()
+        future_maps = getFutureInfoIntent(general=False)
         speak_output = "The next Turf War maps are " + future_maps[0] + "."
         return (
             handler_input.response_builder
@@ -266,7 +306,7 @@ class FutureRBIntentHandler(AbstractRequestHandler):
         # type: (HandlerInput) -> bool
         return ask_utils.is_intent_name("FutureRBIntent")(handler_input)
     def handle(self, handler_input):
-        future_maps = getFutureInfoIntent()
+        future_maps = getFutureInfoIntent(general=False)
         speak_output = "The next Ranked Battle rotation is " + future_maps[1] + "."
         return (
             handler_input.response_builder
@@ -280,7 +320,7 @@ class FutureLBIntentHandler(AbstractRequestHandler):
         # type: (HandlerInput) -> bool
         return ask_utils.is_intent_name("FutureLBIntent")(handler_input)
     def handle(self, handler_input):
-        future_maps = getFutureInfoIntent()
+        future_maps = getFutureInfoIntent(general=False)
         speak_output = "The next League Battle rotation is " + future_maps[2] + "."
         return (
             handler_input.response_builder
@@ -470,6 +510,7 @@ sb.add_request_handler(GeneralInfoIntentHandler())
 sb.add_request_handler(TurfWarIntentHandler())
 sb.add_request_handler(RankedBattleIntentHandler())
 sb.add_request_handler(LeagueBattleIntentHandler())
+sb.add_request_handler(FutureInfoIntentHandler())
 sb.add_request_handler(FutureTWIntentHandler())
 sb.add_request_handler(FutureRBIntentHandler())
 sb.add_request_handler(FutureLBIntentHandler())

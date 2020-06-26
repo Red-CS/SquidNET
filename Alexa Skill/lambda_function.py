@@ -4,13 +4,12 @@
 # Please visit https://alexa.design/cookbook for additional examples on implementing slots, dialog management,
 # session persistence, api calls, and more.
 # This sample is built using the handler classes approach in skill builder.
-import logging
 
+import datetime as dt
+import math
+import logging
 import random
 import requests
-import datetime as dt
-import time
-import math
 
 from ask_sdk_core.utils import is_intent_name, is_request_type
 
@@ -145,13 +144,9 @@ def getOuterMode(header): # helper method for getStageAppearanceTime()
 
 def getWeaponInfoIntent(weapon_called):
 
-    # Gets Weapon called by user
-    # val = get_slot_value(handler_input, "weapon")
-    # weapon = str(val)
     weapon = weapon_called
-    sub = "Error. Please report this error by emailing information about this error to red.devcs@gmail.com or posting an issue at \"https://github.com/Red-CS\""
-    special = "Error. Please report this error by emailing information about this error to red.devcs@gmail.com or posting an issue at \"https://github.com/Red-CS\""
-    # dictionary architecture: Dictionary of Dictionaries of Lists!
+    sub = "Error."
+    special = "Error." 
     weapon_info_dict = {"subs" : {"Auto Bombs" : [
                                                 "Custom Splattershot Jr.", 
                                                 "N-Zap 89", 
@@ -480,18 +475,16 @@ def getWeaponInfoIntent(weapon_called):
                                                       ]
                                     }
                          }
-    # return "test successful"
+
     for inner_type in weapon_info_dict['subs']:
         for actual_weapon in weapon_info_dict['subs'][inner_type]:
             if actual_weapon.lower() == weapon.lower():
-                # print(actual_weapon)
                 sub = inner_type
                 break
             
     for inner_type in weapon_info_dict['specials']:
         for actual_weapon in weapon_info_dict['specials'][inner_type]:
             if actual_weapon.lower() == weapon.lower():
-                # print(actual_weapon)
                 special = inner_type
                 weapon = actual_weapon # reformats in Upper Case
                 break

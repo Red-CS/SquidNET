@@ -128,21 +128,21 @@ def getStageAppearance(stage):
     response = requests.get(url).json()
 
     stage_appearances = []
+    indicies = ['regular', 'gachi', 'league']
 
-    for i in range(1, 12):
-        indicies = ['regular', 'gachi', 'league']
-        
+    for i in range(1, 12):        
         for headers in indicies:
             stage_a = response[headers][i]['stage_a']['name']
             stage_b = response[headers][i]['stage_b']['name']
             mode = response[headers][i]['rule']['name'] # "Turf War" for Turf War, Battle Mode (RM, TC, SZ, CB) for Ranked and League
             if stage_a == stage or stage_b == stage:
-                line = ' in ' + getStageAppearanceTime(response[headers][i]['start_time']) + ' for ' + getOuterMode(headers)
+                line = " in {} for {}".format(getStageAppearanceTime(response[headers][i]['start_time']),
+                                              getOuterMode(headers))
                 if headers != 'regular':
                     line += ' with ' + mode
                 stage_appearances.append(line)
                 break # There is no need to search the rest of that hourly rotation
-    return stage_appearances    # previously stage_appearances, changed to 'stage' to test spoken value
+    return stage_appearances
 
 def getStageAppearanceTime(unix_time):
     current_unix = int(time.time())
@@ -156,16 +156,21 @@ def getStageAppearanceTime(unix_time):
     # Grammar protocols
     if hours == 0:
         if minutes == 1:
-            return str(minutes) + ' minute'                                                     # "in 1 minute"
-        return str(minutes) + ' minutes'    # can't have space after to work with Turf War      # "in x minutes"
+            return '1 minute'                                       # "In 1 minute"
+        return str(minutes) + ' minutes'                            # "In X minutes"
     elif hours == 1:         
-        if minutes == 0:                                                                        
-            return str(hours) + ' hour'                                                          # "in 1 hour"
+        if minutes == 0:                                            
+            return '1 hour'                                         # "In 1 hour"
+        elif minutes == 1:
+            return '1 hour and 1 minute'                            # "In 1 hour and 1 minute"
+        return '1 hour and ' + str(minutes) + ' minutes'            # "In 1 hour and X minutes"
     elif minutes == 1:
-        return str(hours) + ' hour and ' + str(minutes) + ' minute'                          # "in 1 hour and x minutes"
-    return str(hours) + ' hours and ' + str(minutes) + ' minutes'                                # "in x hours and x minutes"
+        return str(hours) + ' hours and 1 minute'                   # "In X hours and 1 minute"
+    return str(hours) + ' hours and ' + str(minutes) + ' minutes'   # "In X hours and X minutes"
 
-def getOuterMode(header): # helper method for getStageAppearanceTime()
+def getOuterMode(header):
+    """Helper method for getStageAppearanceTime()"""
+
     if header == 'gachi':
         return 'Ranked Battle'
     elif header == 'regular':
@@ -274,7 +279,7 @@ class LeagueBattleIntentHandler(AbstractRequestHandler):
                 .speak(speak_output)
                 .response
         )
-# ADDED
+
 class FutureInfoIntentHandler(AbstractRequestHandler):
     """Handler for FutureInfoIntent"""
     def can_handle(self, handler_input):
@@ -370,10 +375,9 @@ class NextStageIntentHandler(AbstractRequestHandler):
             speak_output = 'You can play ' + stage_name + ' next '
             if len(stages) == 1:
                 speak_output += stages[0] + '.'
-                # possibly troublesome, replace with return?
             else:
                 for i in range(len(stages)):
-                    if i == len(stages) - 1:    # if we are on the last stage of the list
+                    if i == len(stages) - 1:    # If we are on the last stage of the list
                         speak_output += ' and ' + stages[i] + '.'
                     else:
                         speak_output += stages[i] + ', '

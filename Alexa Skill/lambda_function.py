@@ -10,6 +10,7 @@ import math
 import logging
 import random
 import requests
+import time
 
 from weapon_info import weapon_info_dict
 
@@ -27,6 +28,9 @@ logger.setLevel(logging.INFO)
 
 
 def time_remaining():
+    """Used to calculate the time remaining, derived from unix time,
+       of the current rotation.
+    """
     cur_hour = int(dt.datetime.utcnow().strftime('%H'))
     cur_minute = int(dt.datetime.utcnow().strftime('%M'))
     
@@ -51,6 +55,7 @@ def time_remaining():
     
 
 def getGeneralInfoIntent(general):
+    """Retrieves information about current map rotations."""
     url = 'https://splatoon2.ink/data/schedules.json'
     response = requests.get(url).json()
     
@@ -85,6 +90,7 @@ def getGeneralInfoIntent(general):
 
 
 def getFutureInfoIntent(general):
+    """Retrieves information about future map rotations"""
     url = 'https://splatoon2.ink/data/schedules.json'
     response = requests.get(url).json()
     
@@ -119,7 +125,7 @@ def getFutureInfoIntent(general):
 
 def getStageAppearance(stage):
     url = 'https://splatoon2.ink/data/schedules.json'
-    response = requests.get(url).json() # response is type dict
+    response = requests.get(url).json()
 
     stage_appearances = []
 
@@ -351,9 +357,9 @@ class NextStageIntentHandler(AbstractRequestHandler):
         # type: (HandlerInput) -> bool
         return ask_utils.is_intent_name("NextStageIntent")(handler_input)
     def handle(self, handler_input):
-        val = get_slot_value(handler_input, "stage")
+        val = get_slot_value(handler_input, "stages")
         stage = str(val)
-        slot_dict = get_slot(handler_input, 'stage').to_dict()
+        slot_dict = get_slot(handler_input, 'stages').to_dict()
         stage_name = slot_dict['resolutions']['resolutions_per_authority'][0]['values'][0]['value']['name']
         
         stages = getStageAppearance(stage_name)

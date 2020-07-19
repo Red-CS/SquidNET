@@ -23,8 +23,7 @@ from ask_sdk_core.dispatch_components import AbstractExceptionHandler
 from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_model import Response
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 def time_remaining():
@@ -178,29 +177,11 @@ def getOuterMode(header):
     return 'League Battle'
 
 
-def getWeaponInfoIntent(weapon_called):
-
-    weapon = weapon_called
-    sub = "Error."
-    special = "Error." 
-    
-    # weapon_info_dict cut from here
-
-    for inner_type in weapon_info_dict['subs']:
-        for actual_weapon in weapon_info_dict['subs'][inner_type]:
-            if actual_weapon.lower() == weapon.lower():
-                sub = inner_type
-                break
-            
-    for inner_type in weapon_info_dict['specials']:
-        for actual_weapon in weapon_info_dict['specials'][inner_type]:
-            if actual_weapon.lower() == weapon.lower():
-                special = inner_type
-                weapon = actual_weapon # reformats in Upper Case
-                break
-            
-                
-    return "The " + weapon + " has " + sub + " and " + special
+def getWeaponInfoIntent(weapon):
+    logging.info(weapon)
+    logging.info(weapon_info_dict[weapon][0])
+    logging.info(weapon_info_dict[weapon][1])
+    return "The {} has {} and {}".format(weapon, weapon_info_dict[weapon][0], weapon_info_dict[weapon][1])
 
 
 class LaunchRequestHandler(AbstractRequestHandler):
